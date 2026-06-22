@@ -1,0 +1,912 @@
+
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ResourceMan - Gibson Shoes</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
+<link rel="stylesheet" href="style.css?v=2">
+    <style>
+        /* Force the layout to collapse into 2 columns (Sidebar + Main) 
+           and ensure main content fills the remaining width. */
+        .app-container { display: flex; width: 100%; height: 100vh; overflow: hidden; }
+        .sidebar { flex-shrink: 0; width: 256px; }
+        .main-content { flex: 1; overflow-y: auto; }
+        
+        /* Remove restricted width to allow the 'View' to fill the right side */
+        .page { 
+            max-width: 100%; 
+            margin: 0; 
+        }
+
+        /* Admin Tabs Styling */
+        .admin-tabs-container {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 24px;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 12px;
+        }
+        .admin-tab-btn {
+            background: transparent;
+            border: none;
+            color: var(--text-muted);
+            font-size: 16px;
+            font-weight: 600;
+            padding: 8px 16px;
+            cursor: pointer;
+            border-radius: 6px;
+            transition: 0.2s;
+        }
+        .admin-tab-btn.active {
+            background: var(--primary);
+            color: #fff;
+        }
+        .admin-panel-section {
+            display: none;
+        }
+        .admin-panel-section.active {
+            display: block;
+        }
+
+        @media (max-width: 768px) {
+            .sidebar { position: fixed; left: 0; top: 0; height: 100%; z-index: 1000; transform: translateX(-100%); transition: transform 0.3s ease; }
+            .sidebar.mobile-open { transform: translateX(0); }
+            .sidebar-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.7); backdrop-filter: blur(4px); z-index: 999; }
+            .sidebar-overlay.active { display: block; }
+        }
+    </style>
+</head>
+<body>
+    <button class="mobile-toggle-btn" onclick="toggleSidebar()"><i class="fas fa-bars"></i></button>
+    <div class="sidebar-overlay" onclick="toggleSidebar()"></div>
+    <div class="app-container">
+        
+        <div class="sidebar">
+            <div class="sidebar-header">
+                <div class="brand-container">
+                    <div class="brand-logo">RM</div>
+                    <div>
+                        <h1 class="brand-title">ResourceMan</h1>
+                        <p class="brand-subtitle">Gibson Shoes</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="sidebar-nav-wrapper">
+                <nav id="main-nav-container">
+                    <!-- Nav items are populated by JS to allow editing, or hardcoded here for default -->
+                    <a onclick="navigateTo(1)" id="nav-1" class="nav-item active">
+                        <i class="fas fa-home"></i>
+                        <span data-label="My ResourceMan">My ResourceMan</span>
+                    </a>
+                    <a onclick="navigateTo(3)" id="nav-3" class="nav-item">
+                        <i class="fas fa-shoe-prints"></i>
+                        <span data-label="Our Shoes">Our Premium Safety shoes</span>
+                    </a>
+                    <a onclick="navigateTo(6)" id="nav-6" class="nav-item">
+                        <i class="fas fa-bolt"></i>
+                        <span data-label="Shoelanders">Shoelanders</span>
+                    </a>
+                    <a onclick="navigateTo(7)" id="nav-7" class="nav-item">
+                        <i class="fas fa-star"></i>
+                        <span data-label="Marikina OTOP">Marikina OTOP</span>
+                    </a>
+                    <a onclick="navigateTo(4)" id="nav-4" class="nav-item">
+                        <i class="fas fa-lightbulb"></i>
+                        <span data-label="Technologies">Technologies</span>
+                    </a>
+                    
+                    <div class="nav-group-title">Support</div>
+
+                    <a onclick="navigateTo(30)" id="nav-30" class="nav-item">
+                        <i class="fas fa-question-circle"></i>
+                        <span data-label="Inquiry">Inquiry</span>
+                    </a>
+
+                    <div class="nav-group-title">Account</div>
+
+                    <a onclick="navigateTo(20)" id="nav-20" class="nav-item">
+                        <i class="fas fa-sign-in-alt"></i>
+                        <span data-label="Login">Login</span>
+                    </a>
+                    <a onclick="navigateTo(21)" id="nav-21" class="nav-item">
+                        <i class="fas fa-user-plus"></i>
+                        <span data-label="Create Account">Create Account</span>
+                    </a>
+                    <a onclick="navigateTo(10)" id="nav-10" class="nav-item">
+                        <i class="fas fa-user-shield"></i>
+                        <span id="nav-portal-text" data-label="Profile">Profile</span>
+                    </a>
+                    
+                    <a onclick="navigateTo(11)" id="nav-11" class="nav-item hidden-admin-nav">
+                        <i class="fas fa-database"></i>
+                        <span data-label="Admin Terminal">Admin Terminal</span>
+                    </a>
+
+                    <a onclick="navigateTo(12)" id="nav-12" class="nav-item hidden-admin-nav">
+                        <i class="fas fa-user-gear"></i>
+                        <span data-label="Admin Product Manager">Admin Product Manager</span>
+                    </a>
+                </nav>
+            </div>
+        </div> <!-- Added missing missing closing tag for sidebar -->
+        
+        <div class="main-content">
+            <div class="top-right-actions">
+                <button class="top-inquiry-button" onclick="navigateTo(30)" title="Inquiry">
+                    <i class="fas fa-question-circle"></i>
+                    <span>Inquiry</span>
+                </button>
+                <div id="top-profile-chip" class="top-profile-chip hidden">
+                    <button class="top-profile-button" onclick="navigateTo(10)">
+                        <div id="top-profile-avatar" class="top-profile-avatar">U</div>
+                        <div class="top-profile-meta">
+                            <div id="top-profile-name" class="top-profile-name">User</div>
+                            <div id="top-profile-role" class="top-profile-role">Client</div>
+                        </div>
+                    </button>
+                    <button class="top-profile-logout" onclick="logout()" title="Logout">
+                        <i class="fas fa-sign-out-alt"></i>
+                    </button>
+                </div>
+            </div>
+
+            <div id="page-30" class="page hidden">
+                <h1 style="margin-bottom: 8px;">Inquiry</h1>
+                <p class="page-subtitle" style="margin-bottom: 32px;">Have a question? We'd love to hear from you.</p>
+
+                <div class="inquiry-layout">
+                    <div class="inquiry-form-card">
+                        <form id="inquiry-form" onsubmit="submitInquiry(event)">
+                            <div class="inquiry-field">
+                                <label class="form-label" for="inquiry-name">Your Name</label>
+                                <input type="text" id="inquiry-name" class="form-input" placeholder="Juan Dela Cruz" required>
+                            </div>
+
+                            <div class="inquiry-field">
+                                <label class="form-label" for="inquiry-email">Email Address</label>
+                                <input type="email" id="inquiry-email" class="form-input" placeholder="juan@example.com" required>
+                            </div>
+
+                            <div class="inquiry-field">
+                                <label class="form-label" for="inquiry-subject">Subject</label>
+                                <select id="inquiry-subject" class="form-input" required>
+                                    <option value="">-- Select a topic --</option>
+                                    <option value="Product Question">Product Question</option>
+                                    <option value="Order Support">Order Support</option>
+                                    <option value="Bulk / Wholesale Inquiry">Bulk / Wholesale Inquiry</option>
+                                    <option value="Partnership & Collaboration">Partnership & Collaboration</option>
+                                    <option value="Feedback & Suggestions">Feedback & Suggestions</option>
+                                    <option value="Other">Other</option>
+                                </select>
+                            </div>
+
+                            <div class="inquiry-field">
+                                <label class="form-label" for="inquiry-message">Message</label>
+                                <textarea id="inquiry-message" class="form-input form-textarea" rows="6" placeholder="Tell us how we can help you..." required></textarea>
+                            </div>
+
+                            <button type="submit" class="btn-action" style="width:100%;justify-content:center;margin-top:8px;">
+                                <i class="fas fa-paper-plane"></i> Send Inquiry
+                            </button>
+                        </form>
+                    </div>
+
+                    <div class="inquiry-info-card">
+                        <div class="inquiry-info-section">
+                            <h3 style="margin-bottom:24px;color:var(--primary);"><i class="fas fa-comments"></i> Get in Touch</h3>
+                            <div class="inquiry-contact-row">
+                                <i class="fas fa-envelope" style="color:var(--primary);width:20px;"></i>
+                                <div>
+                                    <strong>Email</strong>
+                                    <p style="color:var(--text-muted);font-size:13px;margin-top:2px;">resourcemanenterprises88888@gmail.com</p>
+                                </div>
+                            </div>
+                            <div class="inquiry-contact-row">
+                                <i class="fas fa-phone" style="color:var(--primary);width:20px;"></i>
+                                <div>
+                                    <strong>Phone</strong>
+                                    <p style="color:var(--text-muted);font-size:13px;margin-top:2px;">+63 9231012333</p>
+                                </div>
+                            </div>
+                            <div class="inquiry-contact-row">
+                                <i class="fas fa-location-dot" style="color:var(--primary);width:20px;"></i>
+                                <div>
+                                    <strong>Location</strong>
+                                    <p style="color:var(--text-muted);font-size:13px;margin-top:2px;">69 L. DE GUZMAN ST. CONCEPTION UNO MARIKINA CITY,Philippines</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="inquiry-info-section" style="margin-top:24px;padding-top:24px;border-top:1px solid var(--border-color);">
+                            <p style="color:var(--text-muted);font-size:14px;line-height:1.7;">
+                                We typically respond within <strong style="color:#fff;">24 hours</strong> during business days.
+                                For urgent concerns, please reach out via phone.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="page-1" class="page active" style="display:block;">
+                <h1 data-page-title="Welcome to My ResourceMan">Welcome to My ResourceMan</h1>
+           
+
+                <div class="space-stack" style="margin-top: 24px;">
+                    <div class="panel-box panel-padding">
+                        <h2 style="margin-bottom: 12px;">Mission</h2>
+                        <p style="color: var(--text-muted); line-height: 1.7; margin: 0;">To provide reliable, high-quality footwear and service that protects every step, supports every worker, and builds trust through innovation and excellence.</p>
+                    </div>
+                    <div class="panel-box panel-padding">
+                        <h2 style="margin-bottom: 12px;">Vision</h2>
+                        <p style="color: var(--text-muted); line-height: 1.7; margin: 0;">To become a trusted leader in premium safety footwear, inspiring confidence through comfort, performance, and long-lasting value.</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div id="page-3" class="page hidden">
+                <h1 style="margin-bottom: 32px;">Our Premium Safety shoes</h1>
+
+                <section class="process-section">
+                    <div class="process-header-box">
+                        <h2 style="margin-bottom: 12px;">Our Process</h2>
+                       
+                    </div>
+                </section>
+
+                <section class="process-images-section">
+                    <div class="process-images-stack">
+                        <div class="process-image-card">
+                            <img src="https://images.unsplash.com/photo-1542291026-7eec264c27ff?auto=format&fit=crop&w=900&q=80" alt="Process Step 1">
+                            <p>Step 1</p>
+                        </div>
+                        <div class="process-image-card">
+                            <img src="https://images.unsplash.com/photo-1525966222134-fcfa99b8ae77?auto=format&fit=crop&w=900&q=80" alt="Process Step 2">
+                            <p>Step 2</p>
+                        </div>
+                        <div class="process-image-card">
+                            <img src="https://images.unsplash.com/photo-1549298916-b41d501d3772?auto=format&fit=crop&w=900&q=80" alt="Process Step 3">
+                            <p>Step 3</p>
+                        </div>
+                        <div class="process-image-card">
+                            <img src="https://images.unsplash.com/photo-1608231387042-66d1773070a5?auto=format&fit=crop&w=900&q=80" alt="Process Step 4">
+                            <p>Step 4</p>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="applications-section">
+                    <h2 style="margin-bottom: 20px;">Applications</h2>
+                  
+                    <div class="applications-grid">
+                        <div class="application-card">
+                            <img src="https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=800&q=80" alt="Construction">
+                            <p>Automotive</p>
+                        </div>
+                        <div class="application-card">
+                            <img src="https://images.unsplash.com/photo-1542291026-7eec264c27ff?auto=format&fit=crop&w=800&q=80" alt="Safety Work">
+                            <p>Civil Works</p>
+                        </div>
+                        <div class="application-card">
+                            <img src="https://images.unsplash.com/photo-1517649763962-0c623066013b?auto=format&fit=crop&w=800&q=80" alt="Outdoor Adventure">
+                            <p>Constraction</p>
+                        </div>
+                        <div class="application-card">
+                            <img src="https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?auto=format&fit=crop&w=800&q=80" alt="Sports">
+                            <p>Electrical</p>
+                        </div>
+                        <div class="application-card">
+                            <img src="https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&w=800&q=80" alt="Warehouse">
+                            <p>Erotion</p>
+                        </div>
+                        <div class="application-card">
+                            <img src="https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?auto=format&fit=crop&w=800&q=80" alt="Healthcare">
+                            <p>Hotworks</p>
+                        </div>
+                        <div class="application-card">
+                            <img src="https://images.unsplash.com/photo-1487412720507-e7ab37603c6f?auto=format&fit=crop&w=800&q=80" alt="Military">
+                            <p>Mining</p>
+                        </div>
+                        <div class="application-card">
+                            <img src="https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=800&q=80" alt="Travel">
+                            <p>Oiling</p>
+                        </div>
+                        <div class="application-card">
+                            <img src="https://images.unsplash.com/photo-1496747611176-843222e1e57c?auto=format&fit=crop&w=800&q=80" alt="Farming">
+                            <p>Power Generation</p>
+                        </div>
+                        <div class="application-card">
+                            <img src="https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&w=800&q=80" alt="Cycling">
+                            <p>Quariying</p>
+                        </div>
+                        <div class="application-card">
+                            <img src="https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?auto=format&fit=crop&w=800&q=80" alt="Hiking">
+                            <p>Tunneling</p>
+                        </div>
+                        <div class="application-card">
+                            <img src="https://images.unsplash.com/photo-1542291026-7eec264c27ff?auto=format&fit=crop&w=800&q=80" alt="Daily Wear">
+                            <p>OTher Industrial Demolition</p>
+                        </div>
+                    </div>
+                </section>
+
+                <div class="grid-shoes" id="shoes-grid"></div>
+            </div>
+
+            <div id="page-6" class="page hidden">
+                <h1 style="margin-bottom: 32px;">Shoelanders</h1>
+                <div class="grid-shoes" id="shoelanders-grid"></div>
+            </div>
+
+            <div id="page-7" class="page hidden">
+                <h1 style="margin-bottom: 32px;">Marikina OTOP(One Town, One Product)</h1>
+                <div class="grid-shoes" id="marikina-grid"></div>
+            </div>
+
+            <div id="page-4" class="page hidden">
+                <h1 style="margin-bottom: 48px;">ResourceMan Technologies</h1>
+                <div id="tech-grid" class="grid-split-2"></div>
+            </div>
+
+            <div id="shoe-modal" class="modal-overlay hidden">
+                <div class="modal-container">
+                    <div class="modal-media">
+                        <img id="modal-shoe-image" src="">
+                    </div>
+                    <div class="modal-details">
+                        <div>
+                            <button onclick="closeShoeModal()" class="close-btn">×</button>
+                            <h2 id="modal-shoe-name"></h2>
+                            
+                            <div class="price-row-modal">
+                                <p id="modal-shoe-price"></p>
+                                <span id="price-status-badge" class="badge-status"></span>
+                            </div>
+
+                            <p id="modal-shoe-desc" class="modal-desc-text"></p>
+                        </div>
+                        
+                        <div class="modal-footer-action">
+                            <div class="modal-quantity-row">
+                                <label for="modal-quantity">Qty</label>
+                                <input id="modal-quantity" type="number" min="1" value="1" class="modal-quantity-input">
+                            </div>
+                            <button id="modal-buy-btn" onclick="addToCart()" class="btn-action">Add to Cart</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="cancel-reason-modal" class="modal-overlay hidden">
+                <div class="reason-box">
+                    <h2 style="color: var(--danger); font-size: 24px;"><i class="fas fa-exclamation-circle"></i> Cancel Order</h2>
+                    <p style="color: var(--text-muted); font-size: 14px; margin-top: 4px;">Please help us understand why you want to cancel this order.</p>
+                    
+                    <div class="reason-options">
+                        <label class="reason-item">
+                            <input type="radio" name="cancel-reason" value="Changed my mind" checked>
+                            <span>I changed my mind / Don't like it anymore</span>
+                        </label>
+                        <label class="reason-item">
+                            <input type="radio" name="cancel-reason" value="Incorrect size/color">
+                            <span>Ordered incorrect size or color</span>
+                        </label>
+                        <label class="reason-item">
+                            <input type="radio" name="cancel-reason" value="Found better price">
+                            <span>Found a better price elsewhere</span>
+                        </label>
+                        <label class="reason-item">
+                            <input type="radio" name="cancel-reason" value="Shipping delay">
+                            <span>Expected delivery time is too long</span>
+                        </label>
+                    </div>
+
+                    <div style="display: flex; gap: 12px; margin-top: 24px;">
+                        <button onclick="closeCancelModal()" class="btn-sync" style="background: transparent; border: 1px solid var(--border_color);">Keep Order</button>
+                        <button onclick="confirmCancelOrder()" class="btn-action" style="background-color: var(--danger); color: #fff; flex: 1; justify-content: center; padding: 12px;">Confirm Cancellation</button>
+                    </div>
+                </div>
+            </div>
+            
+            <div id="page-20" class="page hidden">
+                <div class="auth-card">
+                    <h2 class="auth-title">Account Login</h2>
+                    <p class="auth-subtitle">Sign in to reveal member pricing and track orders</p>
+                    <form onsubmit="login(event)">
+    <select id="login-role" class="auth-input" style="appearance:auto;">
+        <option value="client">Client</option>
+        <option value="brand-ambassador">Brand Ambassador</option>
+        <option value="technology-ambassador">Technology Ambassador</option>
+    </select>
+    <input id="login-email" type="email" placeholder="Email Address" class="auth-input" autocomplete="username">
+    <input id="login-pass" type="password" placeholder="Password" class="auth-input" autocomplete="current-password">
+    <button type="submit" id="login-btn">Login</button>
+</form>
+                  
+                    <p onclick="navigateTo(21)" class="toggle-auth-prompt">Don't have an account? Create one here</p>
+                </div>
+            </div>
+
+            <div id="payment-modal" class="modal-overlay hidden">
+                <div class="reason-box">
+                    <h2 style="color: var(--primary); font-size: 24px;"><i class="fas fa-credit-card"></i> Payment Method</h2>
+                    <p style="color: var(--text-muted); font-size: 14px; margin-top: 4px;">Choose your preferred way to pay for your items.</p>
+                    
+                                      <div class="reason-options">
+                        <label class="reason-item">
+                            <input type="radio" name="payment-method" value="BankTransfer" checked onchange="toggleOwnerPaymentInfo()">
+                            <span>Bank Transfer</span>
+                        </label>
+                        <label class="reason-item">
+                            <input type="radio" name="payment-method" value="COD" onchange="toggleOwnerPaymentInfo()">
+                            <span>Cash on Delivery (cod) with 50 percent downpayment</span>
+                        </label>
+                    </div>
+
+                    <div id="owner-payment-info" style="display:block; background:#18181b; border:1px solid #3f3f46; border-radius:8px; padding:16px; margin-top:16px;">
+                        <h4 style="color:#facc15; margin-bottom:12px;"><i class="fas fa-university"></i> Bank Transfer Details</h4>
+                        <div style="font-size:14px; line-height:1.8;">
+                            <p><strong style="color:#fff;">Account Name:</strong> <span style="color:#facc15;">Christopher Jose N. Rodriguez</span></p>
+                            <p><strong style="color:#fff;">Account Number:</strong> <span style="color:#facc15; font-family:monospace; font-size:16px;">014763572417</span></p>
+                            <p style="color:#71717a; font-size:12px; margin-top:8px;">Send payment screenshot after ordering</p>
+                        </div>
+                    </div>
+
+                    <div style="display: flex; gap: 12px; margin-top: 24px; justify-content: center;">
+                        <button onclick="closePaymentModal()" style="background: transparent; border: 1px solid #3f3f46; padding: 12px 24px; border-radius: 8px; color: #fff; cursor: pointer;">Back</button>
+                        <button onclick="confirmCheckoutWithPayment()" style="background: var(--primary); border: none; padding: 12px 32px; border-radius: 8px; color: #fff; font-weight: 600; cursor: pointer;">Confirm Order</button>
+                    </div>
+                </div>
+            </div>
+
+            <div id="page-21" class="page hidden">
+                <div class="auth-card">
+                    <h2 class="auth-title">Create Account</h2>
+                    <p class="auth-subtitle">Join ResourceMan to purchase footwear and track order history</p>
+                   <form onsubmit="register(event)">
+    <select id="reg-role" class="auth-input" style="appearance:auto;">
+        <option value="client">Client</option>
+        <option value="brand-ambassador">Brand Ambassador</option>
+        <option value="technology-ambassador">Technology Ambassador</option>
+    </select>
+    <input id="reg-name" type="text" placeholder="Full Name" class="auth-input" autocomplete="name">
+    <input id="reg-email" type="email" placeholder="Email Address" class="auth-input" autocomplete="email">
+    <input id="reg-pass" type="password" placeholder="Secure Password" class="auth-input" autocomplete="new-password">
+    <button type="submit" id="reg-btn">Create Account</button>
+</form>
+                    <p onclick="navigateTo(20)" class="toggle-auth-prompt">Already have an account? Log in instead</p>
+                </div>
+            </div>
+
+            <div id="page-22" class="page hidden">
+                <div class="auth-card">
+                    <h2 class="auth-title">Verify Email Address</h2>
+                    <p class="auth-subtitle">Enter the confirmation code sent to <span id="verify-email-display">your email</span></p>
+                    
+                    <div id="verify-status" style="background: var(--surface-secondary); padding: 16px; border-radius: 8px; margin-bottom: 20px; text-align: center; color: var(--text-muted);">
+                        <p style="margin: 0;">Checking email delivery...</p>
+                        <p style="margin-top: 8px; font-size: 12px;">If you don't receive an email within a minute, check your spam folder.</p>
+                    </div>
+
+                    <input id="verify-code-input" type="text" placeholder="Enter 6-digit code" class="auth-input" maxlength="6" style="text-align: center; font-size: 20px; letter-spacing: 4px; font-family: monospace;">
+                    <button onclick="verifyEmail()" class="btn-action">Confirm Email</button>
+                    <button onclick="cancelVerification()" class="btn-sync" style="background: transparent; border: 1px solid var(--border_color); margin-top: 12px; width: 100%;">Cancel & Go Back</button>
+                </div>
+            </div>
+
+            <div id="page-10" class="page hidden">
+                <div id="customer-empty-view" class="panel-box">
+                    <div class="panel-padding" style="padding: 24px;">
+                        <h2 style="margin-bottom: 12px;">Guest Access Only</h2>
+                        <p style="color: var(--text-muted); line-height: 1.6;">Please log in first to view your profile data and transaction history.</p>
+                    </div>
+                </div>
+
+                <div id="customer-view" class="hidden">
+                    <div class="hub-banner">
+                        <div>
+                            <h2 id="customer-profile-title" style="margin-top: 8px;">Welcome Back!</h2>
+                            <p id="customer-profile-subtitle" style="color: var(--text-muted); margin-top: 4px;">customer@resourceman.com</p>
+                        </div>
+                        <button onclick="logout()" class="btn-signout">Sign Out</button>
+                    </div>
+
+                    <div class="panel-box panel-padding" style="padding: 24px; margin-bottom: 24px;">
+                        <h3 style="font-size: 20px; margin-bottom: 16px; color: var(--primary);"><i class="fas fa-user-circle"></i> Profile Information</h3>
+                        <div style="display: grid; gap: 12px;">
+                            <div><strong>Name:</strong> <span id="profile-name-text"></span></div>
+                            <div><strong>Email:</strong> <span id="profile-email-text"></span></div>
+                            <div><strong>Role:</strong> <span id="profile-role-text"></span></div>
+                            <div><strong>Phone:</strong> <span id="profile-phone-text"></span></div>
+                            <div><strong>Address:</strong> <span id="profile-address-text"></span></div>
+                            <div><strong>Account Status:</strong> <span id="profile-status-text"></span></div>
+                            <div><strong>Orders:</strong> <span id="profile-orders-count"></span></div>
+                        </div>
+                    </div>
+
+                    <div class="dashboard-split">
+                        <div>
+                            <div class="panel-box panel-padding" style="padding: 24px;">
+                                <h3 style="font-size: 20px; margin-bottom: 16px; color: var(--primary);"><i class="fas fa-id-card"></i> Shipping Matrix</h3>
+                                <div>
+                                    <label class="form-label">Contact Handset</label>
+                                    <input id="contact-phone" placeholder="+63 900 000 0000" class="form-input">
+                                    
+                                    <label class="form-label">Fulfillment Address</label>
+                                    <textarea id="contact-address" placeholder="Unit/Building, Street City, Province" rows="3" class="form-input form-textarea"></textarea>
+                                    
+                                    <button onclick="saveProfile()" class="btn-sync">Sync Metadata updates</button>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div>
+                            <div class="panel-box panel-padding" style="padding: 24px;">
+                                <h3 style="font-size: 20px; margin-bottom: 16px; color: var(--primary);"><i class="fas fa-history"></i> Personal Purchase History</h3>
+                                <div class="history-split">
+                                    <div class="history-panel">
+                                        <h4 class="history-panel-title"><i class="fas fa-shopping-cart"></i> Cart History</h4>
+                                        <button id="checkout-all-btn" onclick="checkoutCart()" class="btn-action" style="margin-bottom: 12px; width: 100%; display: none;">Checkout All Items</button>
+                                        <div class="table-container admin-table-scroll">
+                                            <table>
+                                                <thead>
+                                                    <tr>
+                                                        <th>Reference ID</th>
+                                                        <th>Shoe Line Model</th>
+                                                        <th>Invoice Pricing</th>
+                                                        <th>Status Line</th>
+                                                        <th style="text-align: right;">Action</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody id="customer-cart-rows"></tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+
+                                    <div class="history-panel">
+                                        <h4 class="history-panel-title"><i class="fas fa-receipt"></i> Purchase History</h4>
+                                        <div class="table-container">
+                                            <table>
+                                                <thead>
+                                                    <tr>
+                                                        <th>Reference ID</th>
+                                                        <th>Shoe Line Model</th>
+                                                        <th>Invoice Pricing</th>
+                                                        <th>Status Line</th>
+                                                        <th style="text-align: right;">Action</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody id="customer-purchase-rows"></tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="page-11" class="page hidden">
+                <div id="admin-view" class="hidden">
+                    <div class="hub-banner admin-banner">
+                        <div>
+                            <span class="hub-tag admin-hub-tag"><i class="fas fa-shield-alt"></i> Root Administrator Terminal</span>
+                            <h2 style="margin-top: 8px; font-weight: 900;">ResourceMan Admin Dashboard</h2>
+                            <p style="color: var(--text-muted); margin-top: 4px;">Cross-checking site database registers, transactional logs, and system passwords metrics</p>
+                        </div>
+                        <button onclick="logout()" class="btn-action" style="background-color: var(--danger); color: #ffffff;">Kill Active Session</button>
+                    </div>
+                    
+                    <div class="admin-metrics-row">
+                        <div class="metric-card">
+                            <p class="metric-label">Active Profiles Counter</p>
+                            <h3 id="stat-profiles" class="metric-value text-yellow">0</h3>
+                        </div>
+                        <div class="metric-card">
+                            <p class="metric-label">Cumulative Transactions</p>
+                            <h3 id="stat-orders" class="metric-value text-yellow">0</h3>
+                        </div>
+                        <div class="metric-card">
+                            <p class="metric-label">Flagged / Blocked Users</p>
+                            <h3 id="stat-blocked" class="metric-value" style="color: var(--danger);">0</h3>
+                        </div>
+                    </div>
+
+                    <div class="panel-box panel-padding">
+                        <h3 style="margin-bottom: 24px;"><i class="fas fa-users-cog text-yellow"></i> Customer Master Databases & Firewalls</h3>
+                        
+                        <div class="table-container">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>Full Profile Name</th>
+                                        <th>Secure System Email</th>
+                                        <th>Plaintext Password Metric</th>
+                                        <th>Contact / Shipping Profile</th>
+                                        <th>Invoiced History Records</th>
+                                        <th style="text-align: center;">System Override Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="admin-customer-rows"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                    
+                    <div class="panel-box panel-padding" style="margin-top: 24px;">
+                        <h3 style="margin-bottom: 24px;"><i class="fas fa-shopping-bag text-yellow"></i> Global Purchase History</h3>
+                        
+                        <div class="table-container">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>Order ID</th>
+                                        <th>Customer</th>
+                                        <th>Item(s)</th>
+                                        <th>Cost</th>
+                                        <th>Payment</th>
+                                        <th>Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="admin-orders-rows"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                  
+
+                </div>
+            </div>
+
+            <div id="page-12" class="page hidden">
+                <div id="admin-product-view" class="hidden">
+                    <div class="hub-banner admin-banner">
+                        <div>
+                                                    <span class="hub-tag admin-hub-tag"><i class="fas fa-bag-shopping"></i> Admin Product Manager</span>
+                            <h2 style="margin-top: 8px; font-weight: 900;">Modify Products & Navigation</h2>
+                            <p style="color: var(--text-muted); margin-top: 4px;">Manage products catalog or edit sidebar/navigation text. Changes apply immediately.</p>
+                        </div>
+                    </div>
+
+                    <!-- Tabs for switching between Products and Navigation Editor -->
+                   <div class="admin-tabs-container">
+    <button class="admin-tab-btn active" onclick="switchAdminTab('products')" id="tab-btn-products">
+        <i class="fas fa-boxes"></i> Products
+    </button>
+    <button class="admin-tab-btn" onclick="switchAdminTab('navigation')" id="tab-btn-navigation">
+        <i class="fas fa-compass"></i> Navigation
+    </button>
+    <button class="admin-tab-btn" onclick="switchAdminTab('images')" id="tab-btn-images">
+        <i class="fas fa-images"></i> Images
+    </button>
+    
+</div>
+<!-- IMAGES PANEL -->
+<div id="admin-panel-images" class="admin-panel-section">
+    
+    <!-- Product Images -->
+    <div class="panel-box panel-padding" style="margin-top: 18px;">
+        <h3 style="margin-bottom: 12px; color: var(--primary);"><i class="fas fa-boxes"></i> Product Images</h3>
+        <p style="margin-bottom: 16px; color: var(--text-muted);">Edit product images from all categories.</p>
+        <button onclick="loadAllProductImages()" style="background:var(--primary);border:none;padding:10px 20px;border-radius:8px;color:#fff;cursor:pointer;font-weight:600;">Load All Images</button>
+        <div id="all-product-images" style="margin-top: 16px;"></div>
+    </div>
+    
+    <!-- Background Images -->
+    <div class="panel-box panel-padding" style="margin-top: 18px;">
+        <h3 style="margin-bottom: 12px; color: var(--primary);"><i class="fas fa-image"></i> Background Images</h3>
+        <p style="margin-bottom: 16px; color: var(--text-muted);">Edit hero and page background images.</p>
+        <button onclick="loadBackgroundImages()" style="background:var(--primary);border:none;padding:10px 20px;border-radius:8px;color:#fff;cursor:pointer;font-weight:600;">Load Backgrounds</button>
+        <div id="all-background-images" style="margin-top: 16px;"></div>
+    </div>
+</div>
+<!-- CATEGORY DESIGN EDITOR -->
+<div class="panel-box panel-padding" style="margin-top: 18px;">
+    <h3 style="margin-bottom: 12px; color: var(--primary);"><i class="fas fa-palette"></i> Category Design Editor</h3>
+    <p style="margin-bottom: 16px; color: var(--text-muted);">Customize colors and design for each category page.</p>
+    
+    <div style="display: flex; gap: 12px; margin-bottom: 16px; flex-wrap: wrap;">
+        <select id="design-category" onchange="loadCategoryDesign()" style="background:#27272a;border:1px solid #3f3f46;padding:10px;border-radius:8px;color:#fff;min-width:180px;">
+            <option value="">Select Category</option>
+            <option value="shoes">Shoes</option>
+            <option value="shoelanders">Shoelanders</option>
+            <option value="marikina">Marikina</option>
+            <option value="technology">Technologies</option>
+        </select>
+        <button onclick="loadCategoryDesign()" style="background:#3b82f6;border:none;padding:10px 16px;border-radius:8px;color:#fff;cursor:pointer;">Load Design</button>
+        <button onclick="saveCategoryDesign()" style="background:#22c55e;border:none;padding:10px 16px;border-radius:8px;color:#fff;cursor:pointer;">Save Design</button>
+    </div>
+    
+    <div id="design-options" style="display:none;">
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px;">
+            <div>
+                <label style="color:#71717a;font-size:12px;">Page Background</label>
+                <input type="color" id="design-bg" style="width:100%;height:40px;border-radius:4px;border:1px solid #3f3f46;">
+            </div>
+            <div>
+                <label style="color:#71717a;font-size:12px;">Header Color</label>
+                <input type="color" id="design-header" style="width:100%;height:40px;border-radius:4px;border:1px solid #3f3f46;">
+            </div>
+            <div>
+                <label style="color:#71717a;font-size:12px;">Text Color</label>
+                <input type="color" id="design-text" style="width:100%;height:40px;border-radius:4px;border:1px solid #3f3f46;">
+            </div>
+            <div>
+                <label style="color:#71717a;font-size:12px;">Accent Color</label>
+                <input type="color" id="design-accent" style="width:100%;height:40px;border-radius:4px;border:1px solid #3f3f46;">
+            </div>
+            <div>
+                <label style="color:#71717a;font-size:12px;">Card Background</label>
+                <input type="color" id="design-card" style="width:100%;height:40px;border-radius:4px;border:1px solid #3f3f46;">
+            </div>
+            <div>
+                <label style="color:#71717a;font-size:12px;">Price Color</label>
+                <input type="color" id="design-price" style="width:100%;height:40px;border-radius:4px;border:1px solid #3f3f46;">
+            </div>
+        </div>
+        
+        <div style="margin-top: 16px; padding-top: 16px; border-top: 1px solid #3f3f46;">
+            <label style="color:#71717a;font-size:12px;">Custom CSS</label>
+            <textarea id="design-css" style="width:100%;height:80px;background:#27272a;border:1px solid #3f3f46;padding:10px;border-radius:4px;color:#fff;font-family:monospace;font-size:12px;" placeholder="Enter custom CSS..."></textarea>
+        </div>
+        
+        <button onclick="applyCategoryDesign()" style="background:var(--primary);border:none;padding:12px 24px;border-radius:8px;color:#fff;cursor:pointer;font-weight:600;margin-top:16px;">Apply Preview</button>
+    </div>
+</div>
+                    <!-- PRODUCTS PANEL -->
+                    <div id="admin-panel-products" class="admin-panel-section active">
+                        <div class="panel-box panel-padding" style="margin-top: 18px;">
+                            <h3 style="margin-bottom: 12px; color: var(--primary);"><i class="fas fa-edit"></i> Update / Delete Product</h3>
+
+                            <div class="grid-split-2">
+                                <div>
+                                    <label class="form-label">Product Type</label>
+                                    <select id="admin-price-type" class="form-input" onchange="loadProductsForAdmin()">
+                                        <option value="shoe">Gibson Elite Collection</option>
+                                        <option value="shoelander">Shoelanders</option>
+                                        <option value="marikina">Marikina Premium</option>
+                                        <option value="technology">Technologies</option>
+                                    </select>
+                                </div>
+                                <div></div> <!-- Spacer -->
+
+                                <div style="grid-column: 1 / -1;">
+                                    <label class="form-label">Select Product to Edit</label>
+                                    <select id="admin-select-product" class="form-input" onchange="populateProductFields()">
+                                        <option value="">-- Select a product --</option>
+                                    </select>
+                                </div>
+
+                                <div>
+                                    <label class="form-label">New Name</label>
+                                    <input id="admin-edit-name" class="form-input" placeholder="Product name">
+                                </div>
+
+                                <div>
+                                    <label class="form-label">New Price</label>
+                                    <input id="admin-edit-price" class="form-input" placeholder="e.g., 2499">
+                                </div>
+
+                                <div style="grid-column: 1 / -1;">
+                                    <label class="form-label">New Description</label>
+                                    <textarea id="admin-edit-desc" class="form-input form-textarea" rows="2" placeholder="Description"></textarea>
+                                </div>
+                                
+                                <div style="grid-column: 1 / -1; display: flex; gap: 12px;">
+                                    <button onclick="updateProduct()" class="btn-action" style="flex: 1;">Update Selected</button>
+                                    <button onclick="deleteProduct()" class="btn-action" style="background-color: var(--danger); color: #fff; flex: 1;">Delete Selected</button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="panel-box panel-padding" style="margin-top: 18px;">
+                            <h3 style="margin-bottom: 12px; color: var(--primary);"><i class="fas fa-plus-circle"></i> Add New Product</h3>
+                            <div class="grid-split-2">
+                                <div>
+                                    <label class="form-label">Product Type</label>
+                                    <select id="admin-add-type" class="form-input">
+                                        <option value="shoe">Gibson Elite Collection</option>
+                                        <option value="shoelander">Shoelanders</option>
+                                        <option value="marikina">Marikina Premium</option>
+                                        <option value="technology">Technologies</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="form-label">Product Name</label>
+                                    <input id="admin-add-name" class="form-input" placeholder="Name">
+                                </div>
+                                <div>
+                                    <label class="form-label">Price</label>
+                                    <input id="admin-add-price" class="form-input" placeholder="Price">
+                                </div>
+                                <div>
+                                    <label class="form-label">Description</label>
+                                    <input id="admin-add-desc" class="form-input" placeholder="Short description">
+                                </div>
+                                <div style="grid-column: 1 / -1;">
+                                    <button onclick="addNewProduct()" class="btn-action" style="width: 100%;">Add Product</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- NAVIGATION EDITOR PANEL -->
+                    <div id="admin-panel-navigation" class="admin-panel-section">
+                        <div class="panel-box panel-padding" style="margin-top: 18px;">
+                            <h3 style="margin-bottom: 12px; color: var(--primary);"><i class="fas fa-link"></i> Edit Sidebar Navigation Labels</h3>
+                            <p style="margin-bottom: 16px; color: var(--text-muted); font-size: 14px;">Change the text displayed in the sidebar menu.</p>
+                            
+                            <div class="table-container">
+                                <table>
+                                    <thead>
+                                        <tr>
+                                            <th>Current Label</th>
+                                            <th>New Label Text</th>
+                                            <th>Action</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="nav-editor-rows">
+                                        <!-- Populated by JS -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <div class="panel-box panel-padding" style="margin-top: 18px;">
+                            <h3 style="margin-bottom: 12px; color: var(--primary);"><i class="fas fa-heading"></i> Edit Page Titles & Subtitles</h3>
+                            <p style="margin-bottom: 16px; color: var(--text-muted); font-size: 14px;">Change the main heading (h1) and subtitle text for specific pages.</p>
+                            
+                            <div class="table-container">
+                                <table>
+                                    <thead>
+                                        <tr>
+                                            <th>Page ID</th>
+                                            <th>Current Title</th>
+                                            <th>New Title</th>
+                                            <th>Current Subtitle</th>
+                                            <th>New Subtitle</th>
+                                            <th>Action</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="page-editor-rows">
+                                        <!-- Populated by JS -->
+                                         
+        
+            <thead>
+                <tr>
+                    <th>Page</th>
+                    <th>Current Title</th>
+                    <th>New Title</th>
+                    <th>Current Subtitle</th>
+                    <th>New Subtitle</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody id="page-editor-rows">
+                <tr><td colspan="6" style="text-align:center;color:#71717a;padding:24px;">Click "Load Pages" to edit</td></tr>
+            </tbody>
+        </table>
+    </div>
+
+                                    
+                                     
+                            
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+        </div>
+    
+   
+
+    
+    <div id="toast" class="toast-popup hidden">Action completed</div>
+    
+    <script src="https://cdn.jsdelivr.net/npm/emailjs-com@3/dist/email.min.js"></script>
+<script src="index.js?v=999"></script>
+
+</body>
+</html>
